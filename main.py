@@ -1,54 +1,57 @@
 import os
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
 import json
 import csv
 from config import CONFIG
-from module.dataLoader import loadImg
+from module.dataLoader import loadImg, loadMetadata
 from util.visualize import showHist, showImg
 from util.fileSave import saveImg, saveMask
-from skyDetector.predict import predictSkyRatio
+from util.validator import isAlreadyDownloaded
 from module.pointGenerator import pointListGen
 
 # Check path
 # os.chdir(CONFIG.HOME_DIR)
 
-def makeResult(turn):
+def makeResult():
     # Make lat and lon list using config
-    pointList = pointListGen(CONFIG.BASE_POINT_LIST)
-    dataLen = len(pointList)
+    pointList = pointListGen()
 
     # Make dataframe using pandas
-    data = {
-        'lat': [],
-        'lon': [],
-        'sky_ratio': []
-    }
-    df = pd.DataFrame(data)
+    metaIndex = {}
+    metaDf = pd.DataFrame(columns=['lat', 'lon', 'panoId', 'date'])
 
     # Load GSV images and depthmap
-    for idx, point in enumerate(pointList):
+    for idx, point in enumerate(tqdm(pointList)):
         lat = point[0]
         lon = point[1]
-        print(f"이미지 분석 중... {idx+1}/{dataLen}")
+        # print(f"lat: {lat}, lon: {lon}")
 
         # Load an image from GSV API
-        status, image = loadImg(lat, lon, CONFIG.API_KEY, CONFIG.FOV, turn)
-        if status == 200:
-            # showImg(image)
-            # Calculate sky ratio of the image
-            skyRatio, mask = predictSkyRatio(image)
-            # Save GSV images and mask results every 500*nth time
-            if idx % 500 == 0:
-                saveImg(image, idx, turn)
-                saveMask(mask, idx, turn)
-            print(f"천공률: {skyRatio}")
-            # Add data to pandas dataframe
-            df.loc[len(df.index)] = [lat, lon, skyRatio]
+        metadataResponse = loadMetadata(lat, lon, CONFIG.API_KEY)
+        if metadataResponse['status'] == 'OK':
+            lat = metadataResponse['location']['lat']
+            lon = metadataResponse['location']['lng']
+            panoId = metadataResponse['pano_id']
+            date = metadataResponse['date']
 
-    df.to_csv(f"./sky_ratio_result_{turn}.csv", na_rep='Unknown')
+            panoIdList = list(metaDf['panoId'])
 
-for idx in range(1, 3):
-    makeResult(idx)
+            # Check the data is already downloaded
+            if isAlreadyDownloaded(panoId, panoIdList):
+                continue
+            # print(f"lat: {lat}, lon: {lon}, panoId: {panoId}, date: {date}")
+            metaDf.loc[len(metaDf)] = [lat, lon, panoId, date]
+            for turn in range(CONFIG.DIRECTION_NUM):
+                status, image = loadImg(lat, lon, CONFIG.API_KEY, CONFIG.FOV, CONFIG.DIRECTION_NUM, turn)
+                if status == 200:
+                    # showImg(image)
+                    saveImg(image, metadataResponse['pano_id'], turn, CONFIG.SAVE_DIR)
+        # if idx == 5:
+        #     break
 
+    metaDf.to_csv(f"{CONFIG.SAVE_DIR}/metadata/metadata.csv", na_rep='Unknown')
 
+if __name__ == "__main__":
+    makeResult()

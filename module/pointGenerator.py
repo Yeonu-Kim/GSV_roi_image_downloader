@@ -1,24 +1,19 @@
+import os
 import numpy as np
+import pandas as pd
 
-def pointListGen(basePointList: list):
-    pointList = np.array([[]])
+def getPointData(coor_df: pd.DataFrame) -> np.array:
+    newPoint = np.stack((np.array(coor_df['lat']), np.array(coor_df['lon'])), axis=1)
+    return newPoint
 
-    for idx, basePoint in enumerate(basePointList):
-        lat_left, lat_right, lon_down, lon_up = basePoint
-
-        latList = np.arange(lat_left, lat_right, 0.001)
-        lonList = np.arange(lon_down, lon_up, 0.001)
-
-        latGrid, lonGrid = np.meshgrid(latList, lonList)
-        # Flatten 2d array to 1d array
-        latGrid = latGrid.ravel()
-        lonGrid = lonGrid.ravel()
-
-        # Make grid coordinates
-        pointListParts = np.column_stack([latGrid.T, lonGrid.T])
-        if idx == 0:
-            pointList = pointListParts
-        else:
-            pointList = np.block([[pointList], [pointListParts]])
+def pointListGen() -> np.array:
+    pointList = np.array([])
+    with os.scandir('./data') as fileList:
+        for targetFile in fileList:
+            coorDf = pd.read_csv(targetFile)
+            newPoint = getPointData(coorDf)
+            pointList = np.append(pointList, newPoint)
+    
+    pointList = pointList.reshape(-1, 2)
 
     return pointList

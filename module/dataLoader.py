@@ -9,14 +9,9 @@ import skimage
 
 sys.path.append(os.pardir)
 
-def loadImg(lat:float, lon:float, APIkey:str, fov:int, turn: int):
-    params = {
-            'location': f"{lon},{lat}",
-            'key': APIkey,
-            'heading': f"{120*turn}",
-            'fov': f"{fov}"
-        }
-    url = f"https://maps.googleapis.com/maps/api/streetview?size=600x300&location={params['location']}&fov={params['fov']}&heading={params['heading']}&return_error_code=true&key={params['key']}"
+def loadImg(lat:float, lon:float, APIkey:str, fov:int, directionNum:int, turn: int):
+    heading = 360/directionNum*turn
+    url = f"https://maps.googleapis.com/maps/api/streetview?size=640x640&location={lat},{lon}&fov={fov}&heading={heading}&return_error_code=true&key={APIkey}"
 
     response = requests.get(url)
     status = response.status_code
@@ -32,3 +27,13 @@ def loadLocalImg(path:str):
     image = image[:, :, :3]
     image = skimage.img_as_ubyte(image)
     return image
+
+def loadMetadata(lat:float, lon:float, APIkey:str):
+    url = f"https://maps.googleapis.com/maps/api/streetview/metadata?location={lat},{lon}&return_error_code=true&key={APIkey}"
+
+    response = requests.get(url)
+    status = response.status_code
+    # print(response.status_code)
+    # print(response.json())
+
+    return response.json()
