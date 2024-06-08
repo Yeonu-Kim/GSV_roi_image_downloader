@@ -178,5 +178,9 @@ pyrightconfig.json
 data/
 output/
 dummy_output/
+data_info.xlsx
+
+# module (instance)
+streetview/
 
 # End of https://www.toptal.com/developers/gitignore/api/python

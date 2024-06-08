@@ -6,9 +6,11 @@ with open(".secret/common.json", "r") as f:
 
 class CONFIG:
     HOME_DIR = r"/home/ywk0524/GSV_image_download"
-    SAVE_DIR = r"/home/ywk0524/GSV_image_download/dummy_output"
+    SAVE_DIR = r"/home/ywk0524/GSV_image_download/output"
 
     API_KEY = secretData['API_KEY']
+    SIGNATURE = secretData['SIGNATURE']
+    
 
     FOV = 90
     DIRECTION_NUM = 4
