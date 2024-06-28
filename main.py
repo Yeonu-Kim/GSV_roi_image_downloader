@@ -66,11 +66,12 @@ def loadMetadata():
     metaDf.to_csv(metadata_path, na_rep='Unknown')
     logging.info(f"Metadata saved to {metadata_path}")
 
+# 3784 + 6534 + 8460 + 9668 + 11196 + 69907 + 10587 = 57226
 def loadImage():
     metaDf = pd.read_csv('./output/metadata/valid_points.csv').dropna()
     pointList = np.array(metaDf.loc[:, 'panoId'])
 
-    for idx, point in enumerate(tqdm(pointList)):
+    for idx, point in enumerate(tqdm(pointList[57226:77226])):
         panoId = point
         retries = 10  # Number of retries for connection errors
 
